@@ -343,3 +343,41 @@ pub async fn native_capture_window(save_dir: String) -> Result<String, String> {
         Err("Screenshot was cancelled or failed".to_string())
     }
 }
+
+// ============ SCROLLING SCREENSHOT COMMANDS ============
+
+use crate::scroll_screenshot::{capture_scrolling_screenshot, get_available_windows, WindowInfo};
+
+/// Get list of available windows for scrolling screenshot
+#[tauri::command]
+pub async fn get_windows_for_scroll() -> Result<Vec<WindowInfo>, String> {
+    get_available_windows()
+}
+
+/// Capture scrolling screenshot of a window
+#[tauri::command]
+pub async fn capture_scrolling_screenshot_cmd(
+    window_title: String,
+    save_dir: String,
+    scroll_amount: Option<u32>,
+    scroll_delay_ms: Option<u64>,
+) -> Result<ScrollScreenshotResult, String> {
+    use crate::scroll_screenshot::ScrollConfig;
+
+    let config = ScrollConfig {
+        scroll_amount: scroll_amount.unwrap_or(500),
+        scroll_delay_ms: scroll_delay_ms.unwrap_or(300),
+        ..Default::default()
+    };
+
+    capture_scrolling_screenshot(&window_title, &save_dir, Some(config)).await
+}
+
+/// Result type for scrolling screenshot
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct ScrollScreenshotResult {
+    pub images: Vec<String>,
+    pub stitched_path: Option<String>,
+    pub total_height: u32,
+    pub total_width: u32,
+}
