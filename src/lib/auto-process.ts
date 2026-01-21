@@ -2,23 +2,35 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { Store } from "@tauri-apps/plugin-store";
 import { createHighQualityCanvas } from "./canvas-utils";
 import { resolveBackgroundPath, getDefaultBackgroundPath } from "./asset-registry";
+import { appendForensicMetadata } from "./forensic-metadata";
 
 type BackgroundType = "transparent" | "white" | "black" | "gray" | "custom" | "image" | "gradient";
 
+interface AutoProcessOptions {
+  timestampUtc?: string;
+}
+
 export async function processScreenshotWithDefaultBackground(
-  imagePath: string
+  imagePath: string,
+  options: AutoProcessOptions = {}
 ): Promise<string> {
   return new Promise(async (resolve, reject) => {
     let backgroundType: BackgroundType = "image";
     let customColor = "#667eea";
     let defaultBgImage: string = getDefaultBackgroundPath();
     let bgImage: HTMLImageElement | null = null;
+    let forensicEnabled = false;
+    let forensicTeam = "";
+    let forensicUser = "";
     
     try {
       const store = await Store.load("settings.json");
       const storedBgType = await store.get<BackgroundType>("defaultBackgroundType");
       const storedCustomColor = await store.get<string>("defaultCustomColor");
       const storedDefaultBg = await store.get<string>("defaultBackgroundImage");
+      const storedForensicEnabled = await store.get<boolean>("forensicMetadataEnabled");
+      const storedForensicTeam = await store.get<string>("forensicTeam");
+      const storedForensicUser = await store.get<string>("forensicUser");
       
       if (storedBgType) {
         backgroundType = storedBgType;
@@ -29,9 +41,35 @@ export async function processScreenshotWithDefaultBackground(
       if (storedDefaultBg && (backgroundType === "image" || backgroundType === "gradient")) {
         defaultBgImage = resolveBackgroundPath(storedDefaultBg);
       }
+      if (storedForensicEnabled !== null && storedForensicEnabled !== undefined) {
+        forensicEnabled = storedForensicEnabled;
+      }
+      if (storedForensicTeam) {
+        forensicTeam = storedForensicTeam;
+      }
+      if (storedForensicUser) {
+        forensicUser = storedForensicUser;
+      }
     } catch (err) {
       console.error("Failed to load default background from settings:", err);
     }
+
+    const buildUserLabel = (team: string, user: string) => {
+      const safeTeam = team.trim() || "unknown";
+      const safeUser = user.trim() || "unknown";
+      return `${safeTeam}/${safeUser}`;
+    };
+
+    const applyForensicMetadata = (canvas: HTMLCanvasElement) => {
+      if (!forensicEnabled) {
+        return canvas;
+      }
+      const timestampUtc = options.timestampUtc ?? new Date().toISOString();
+      return appendForensicMetadata(canvas, {
+        timestampUtc,
+        userLabel: buildUserLabel(forensicTeam, forensicUser),
+      });
+    };
 
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -64,7 +102,9 @@ export async function processScreenshotWithDefaultBackground(
                 },
               });
 
-              canvas.toBlob(
+              const outputCanvas = applyForensicMetadata(canvas);
+
+              outputCanvas.toBlob(
                 (blob) => {
                   if (blob) {
                     const reader = new FileReader();
@@ -119,7 +159,9 @@ export async function processScreenshotWithDefaultBackground(
               },
             });
 
-            canvas.toBlob(
+            const outputCanvas = applyForensicMetadata(canvas);
+
+            outputCanvas.toBlob(
               (blob) => {
                 if (blob) {
                   const reader = new FileReader();

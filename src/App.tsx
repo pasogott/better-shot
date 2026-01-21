@@ -240,6 +240,9 @@ function App() {
         defaults: {
           copyToClipboard: true,
           autoApplyBackground: false,
+          forensicMetadataEnabled: false,
+          forensicTeam: "",
+          forensicUser: "",
         },
         autoSave: true,
       });
@@ -302,6 +305,9 @@ function App() {
           defaults: {
             copyToClipboard: true,
             autoApplyBackground: false,
+            forensicMetadataEnabled: false,
+            forensicTeam: "",
+            forensicUser: "",
           },
           autoSave: true,
         });
@@ -440,6 +446,8 @@ function App() {
         saveDir: currentTempDir,
       });
 
+      const captureTimestampUtc = new Date().toISOString();
+
       // Get mouse position IMMEDIATELY after screenshot completes
       // This captures where the user finished their selection
       let mouseX: number | undefined;
@@ -457,7 +465,9 @@ function App() {
       if (shouldAutoApply) {
         try {
           const processedImageData =
-            await processScreenshotWithDefaultBackground(screenshotPath);
+            await processScreenshotWithDefaultBackground(screenshotPath, {
+              timestampUtc: captureTimestampUtc,
+            });
 
           const savedPath = await invoke<string>("save_edited_image", {
             imageData: processedImageData,
