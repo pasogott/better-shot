@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Forensic metadata footer**: Append UTC timestamp and team/user identity to auto-apply screenshots (configurable in Preferences)
 - **Background Border slider**: New control in the Background Effects panel to adjust the padding around captured screenshots
   - Slider range: 0px (no border) to 200px (maximum border)
   - Smart default: Automatically calculates 5% of the average image dimension, capped at 200px
