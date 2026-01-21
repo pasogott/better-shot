@@ -17,12 +17,18 @@ interface PreferencesPageProps {
 interface GeneralSettings {
   saveDir: string;
   copyToClipboard: boolean;
+  forensicMetadataEnabled: boolean;
+  forensicTeam: string;
+  forensicUser: string;
 }
 
 export function PreferencesPage({ onBack, onSettingsChange }: PreferencesPageProps) {
   const [settings, setSettings] = useState<GeneralSettings>({
     saveDir: "",
     copyToClipboard: true,
+    forensicMetadataEnabled: false,
+    forensicTeam: "",
+    forensicUser: "",
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -34,10 +40,16 @@ export function PreferencesPage({ onBack, onSettingsChange }: PreferencesPagePro
         
         const copyToClip = await store.get<boolean>("copyToClipboard");
         const saveDir = await store.get<string>("saveDir");
+        const forensicMetadataEnabled = await store.get<boolean>("forensicMetadataEnabled");
+        const forensicTeam = await store.get<string>("forensicTeam");
+        const forensicUser = await store.get<string>("forensicUser");
         
         setSettings({
           saveDir: saveDir || "",
           copyToClipboard: copyToClip ?? true,
+          forensicMetadataEnabled: forensicMetadataEnabled ?? false,
+          forensicTeam: forensicTeam || "",
+          forensicUser: forensicUser || "",
         });
       } catch (err) {
         console.error("Failed to load settings:", err);
@@ -145,6 +157,57 @@ export function PreferencesPage({ onBack, onSettingsChange }: PreferencesPagePro
                 checked={settings.copyToClipboard}
                 onCheckedChange={(checked) => updateSetting("copyToClipboard", checked)}
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Forensics */}
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold text-card-foreground">Forensics</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <label htmlFor="forensic-enabled" className="text-sm font-medium text-foreground cursor-pointer block">
+                  Add forensic metadata
+                </label>
+                <p className="text-xs text-foreground0">Adds UTC timestamp and user info to auto-applied screenshots</p>
+              </div>
+              <Switch
+                id="forensic-enabled"
+                checked={settings.forensicMetadataEnabled}
+                onCheckedChange={(checked) => updateSetting("forensicMetadataEnabled", checked)}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label htmlFor="forensic-team" className="text-sm font-medium text-foreground">
+                  Team
+                </label>
+                <input
+                  id="forensic-team"
+                  type="text"
+                  value={settings.forensicTeam}
+                  onChange={(e) => updateSetting("forensicTeam", e.target.value)}
+                  placeholder="e.g., security"
+                  className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-card-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all font-mono text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="forensic-user" className="text-sm font-medium text-foreground">
+                  User
+                </label>
+                <input
+                  id="forensic-user"
+                  type="text"
+                  value={settings.forensicUser}
+                  onChange={(e) => updateSetting("forensicUser", e.target.value)}
+                  placeholder="e.g., alex"
+                  className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-card-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all font-mono text-sm"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
